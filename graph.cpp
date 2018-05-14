@@ -12,6 +12,7 @@ using namespace std;
 #define WHITE	-1
 #define	GRAY	0
 #define BLACK   1
+#define NIL     -1
 typedef int Status;
 
 short	color[MAXVEX];
@@ -20,6 +21,8 @@ int d[MAXVEX];
 int f[MAXVEX];
 int path[100][100];
 vector<int> cb;
+int parent[MAXVEX];
+int low[MAXVEX];
 
 bool visited[MAXVEX]; //全局数组，记录结点是否已补访问
 
@@ -905,6 +908,57 @@ void findCB(const AdjListGraph &G){
     cout<<"CB:";
     cout<<endl;
 }
+
+int min(int _a,int _b){
+    return _a>_b?_a:_b;
+}
+
+void findCutPoint(const AdjListGraph &_G,int _u) {
+    //记录dfs遍历次序
+    static int counter = 0;
+
+    //记录节点u的子树数
+    int children = 0;
+
+    EdgeNode *p = _G.adjList[_u].pFirstEdge;
+    visited[_u] = 1;
+
+    //初始化d与low
+    d[_u] = low[_u] = ++counter;
+
+    for(; p != NULL; p = p->next) {
+        int v = p->adjvex;
+
+        //节点v未被访问，则(u,v)为树边
+        if(!visited[v]) {
+            children++;
+            parent[v] = _u;
+            findCutPoint(_G,v);
+            low[_u] = min(low[_u], low[v]);
+            //case (1)
+            if(parent[_u] == NIL && children > 1) {
+                printf("articulation point: %d\n", _u);
+            }
+            //case (2)
+            if(parent[_u] != NIL && low[v] >= d[_u]) {
+                printf("articulation point: %d\n", _u);
+            }
+        }
+
+        //节点v已访问，则(u,v)为回边
+        else if(v != parent[_u]) {
+            low[_u] = min(low[_u], d[v]);
+        }
+    }
+}
+
+void FCP(const AdjListGraph &_G){
+    for(int i = 0;i<_G.iVexNum;i++){
+        visited[i] = false;
+        parent[i] = NIL;
+    }
+    findCutPoint(_G,0);
+};
 
 int main()
 {
