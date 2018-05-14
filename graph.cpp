@@ -19,6 +19,7 @@ int t = 0;
 int d[MAXVEX];
 int f[MAXVEX];
 int path[100][100];
+vector<int> cb;
 
 bool visited[MAXVEX]; //全局数组，记录结点是否已补访问
 
@@ -97,7 +98,7 @@ int GetIndexByVertexVal(const AdjListGraph& G, VertexType val)
 }
 
 //创建有向图
-Status CreateAdjListGraph(AdjListGraph& G,int v , int e)
+int CreateAdjListGraph(AdjListGraph& G,int v , int e)
 {
 
 	G.iVexNum = v;
@@ -112,19 +113,20 @@ Status CreateAdjListGraph(AdjListGraph& G,int v , int e)
 
 	int m;
 	int n;
-	srand((unsigned)time(NULL));
+	srand((unsigned int)time(NULL));
 	for (int i = 0; i < G.iEdgeNum; ++i)
 	{
 		//VertexType first;
 		//VertexType second;
 
-		m = (int)v * rand() / (RAND_MAX + 1);
-		n = (int)v * rand() / (RAND_MAX + 1);
+		m = (int)(v * (rand() / (RAND_MAX + 1.0)));
+		n = (int)(v * (rand() / (RAND_MAX + 1.0)));
 
+    ////    cout<<m<<","<<n<<endl;
 		while (ExistEdge(G, m, n) > 0  || m == n) {
 			//m = (int)100 * rand() / (RAND_MAX + 1);
 			//cout << "(" << m << "," << n << ")";
-			n = (int)100 * rand() / (RAND_MAX + 1);
+			n = (int)(v * (rand() / (RAND_MAX + 1.0)));
 
 		}
 		EdgeNode* pEdgeNode = new EdgeNode;
@@ -800,8 +802,10 @@ bool inverseGraph(const AdjListGraph &s, AdjListGraph &d) {
 	EdgeNode *dEdge;
 	for (int i = 0; i < d.iVexNum; i++)
 	{
-		EdgeNode *edge = new EdgeNode;
+		EdgeNode *edge = new EdgeNode();
 		pEdge = s.adjList[i].pFirstEdge;
+        if(!pEdge)
+            continue;
 		d.adjList[i].data = i;
 		edge->adjvex = i;
 		edge->next = d.adjList[pEdge->adjvex].pFirstEdge;;
@@ -826,52 +830,142 @@ bool inverseGraph(const AdjListGraph &s, AdjListGraph &d) {
 
 	return true;
 }
+void dfsCB(const AdjListGraph &G,int i){
+
+    cb.push_back(i);
+	color[i] = GRAY;
+	d[i] = ++t;
+	EdgeNode* pEdge = G.adjList[i].pFirstEdge;
+	while (pEdge)
+	{
+		int j = pEdge->adjvex;
+		if (color[j] == WHITE)
+		{
+			dfsCB(G, j);
+		}
+		pEdge = pEdge->next;
+	}
+	f[i] = ++t;
+	color[i] = BLACK;
+}
+void DFSCB(const AdjListGraph &G){
+
+	for (int i = 0; i < G.iVexNum; ++i)
+	{
+		color[i] = WHITE;
+	}
+    t = 0;
+	//DFSLoop(G, v);
+
+	for (int i = 0; i < G.iVexNum; ++i)
+	{
+		if (color[i] == WHITE)
+			dfsCB(G, i);
+	}
+}
+int maxUnvisited(int _v,int _f[MAXVEX]){
+    int _max = 0;
+    for(int _i =1;_i<_v;_i++){
+        if(color[_i] == WHITE && _f[_max] < _f[_i])
+            _max = _i;
+    }
+    return _max;
+}
+void findCB(const AdjListGraph &G){
+
+    DFSCB(G);
+    int finish[MAXVEX];
+    for(int i = 0;i<MAXVEX;i++){
+        finish[i] = f[i];
+        if(f[i] > 0)
+        cout<<f[i]<<endl;
+    }
+    AdjListGraph F;
+    inverseGraph(G,F);
+    int max;
+    cb.clear();
+    for(int i = 0;i<MAXVEX;i++){
+        color[i] = WHITE;
+    }
+    max = maxUnvisited(F.iVexNum,finish);
+    while(color[max] == WHITE){
+        dfsCB(F,max);
+        cb.push_back(-1);
+        max = maxUnvisited(F.iVexNum,finish);
+    }
+    //cb.push_back(-100);
+    cout<<"CB:";
+    cout<<cb.size()<<endl;
+    for(int i  = 0;i<cb.size();i++){
+        if(cb[i] == -1)
+            cout<<endl;
+        else
+            cout<<cb[i]<<"  ";
+    }
+    cout<<"CB:";
+    cout<<endl;
+}
 
 int main()
 {
 	//创建有向图
 	AdjListGraph G,F;
-	CreateAdjListGraph(G,100,3000);
-	inverseGraph(G,F);
+	CreateAdjListGraph(G,10,20);
+	//inverseGraph(G,F);
 	//深度优先遍历图
 //	DFS(G,10);
-
+    findCB(G);
 
 	cout << endl << endl;
 
 	//广度优先遍历图
 	//BFS(G,10);
 
-	cout << endl << endl;
+//	cout << endl << endl;
 
 //	DFS2(G,10);
-	cout << endl << endl;
+//	cout << endl << endl;
 	//DFSTraverse(F, 10);
 //	cout << endl << endl;
 	EdgeNode *en;
-/*	for (int i = 0; i < G.iVexNum; i++)
+	for (int i = 0; i < G.iVexNum; i++)
 	{
-		cout<<G.adjList[i].pFirstEdge->adjvex;
-		en = G.adjList[i].pFirstEdge->next;
+        cout<<i<<" ";
+		en = G.adjList[i].pFirstEdge;
 		while (en)
 		{
 			cout <<" "<<en->adjvex ;
 			en = en->next;
 		}
 		cout << endl;
-	}*/
-
+	}
+		cout << endl;
+	/*for (int i = 0; i <F.iVexNum; i++)
+	{
+        cout<<i<<" ";
+        if(F.adjList[i].pFirstEdge == NULL)
+            continue;
+		cout<<F.adjList[i].pFirstEdge->adjvex;
+		en = F.adjList[i].pFirstEdge->next;
+		while (en)
+		{
+			cout <<" "<<en->adjvex ;
+			en = en->next;
+		}
+        cout<<endl;
+    }*/
 //	distanceFromV(G,10);
-	cout << endl << endl;
-	int d = 0,dc=0;
+//	cout << endl << endl;
+	/*int d = 0,dc=0;
 	for (int i = 0; i < 100; i++)
 	{
 		d = GetVertexDegree(G, i);
 		dc += d;
 		cout << d << "  ";
-	}
-	cout << dc <<endl;
-	d = 0; dc = 0;
+/	}*/
+//	cout << dc <<endl;
+    int d = 0;
+    int dc = 0;
 	/*for (int i = 0; i < 100; i++)
 	{
 		d = GetVertexDegree(F, i);
@@ -910,10 +1004,9 @@ int main()
 //	VertexType v;
 //	cin >> v;
 //	cout << "度为：" << GetVertexDegree(G, v) << endl;
-	system("pause");
 
 	//销毁有向图
 	DestroyGraph(G);
-	DestroyGraph(F);
+//	DestroyGraph(F);
 	return 0;
 }
