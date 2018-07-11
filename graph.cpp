@@ -23,12 +23,17 @@ int path[100][100];
 vector<int> cb;
 int parent[MAXVEX];
 int low[MAXVEX];
+int origion = 0;
+int re_num = 0;
+bool cut[100];
+static int counter = 0;
 
 bool visited[MAXVEX]; //全局数组，记录结点是否已补访问
 
 int vLength[MAXVEX];//全局数组,节点最长路径;
 
 typedef int EdgeWeight;
+vector<pair<int,int>> edges;
 typedef struct EdgeNode
 {
 	int adjvex; //邻接点
@@ -89,6 +94,7 @@ void copyGraph(const AdjListGraph & s, AdjListGraph & d)
 }
 
 int ExistEdge(const AdjListGraph& G, VertexType s, VertexType d);
+int ExistEdge2(const AdjListGraph& G, VertexType s, VertexType d);
 //由顶点值得到顶点索引
 int GetIndexByVertexVal(const AdjListGraph& G, VertexType val)
 {
@@ -143,7 +149,95 @@ int CreateAdjListGraph(AdjListGraph& G,int v , int e)
 	return SUCCESS;
 }
 
+int CreateUndirectedAdjListGraph(AdjListGraph& G,int v , int e)
+{
 
+	G.iVexNum = v;
+	G.iEdgeNum = e;
+	for (int i = 0; i < G.iVexNum; ++i)
+	{
+
+		G.adjList[i].data = i;
+
+		G.adjList[i].pFirstEdge = NULL;
+	}
+
+	int m;
+	int n;
+	srand((unsigned int)time(NULL));
+	for (int i = 0; i < G.iEdgeNum; ++i)
+	{
+		//VertexType first;
+		//VertexType second;
+
+		m = (int)(v * (rand() / (RAND_MAX + 1.0)));
+		n = (int)(v * (rand() / (RAND_MAX + 1.0)));
+
+    ////    cout<<m<<","<<n<<endl;
+		while (ExistEdge(G, m, n) > 0  || m == n) {
+			//m = (int)100 * rand() / (RAND_MAX + 1);
+			//cout << "(" << m << "," << n << ")";
+			n = (int)(v * (rand() / (RAND_MAX + 1.0)));
+
+		}
+		EdgeNode* pEdgeNode = new EdgeNode;
+		pEdgeNode->adjvex = n;
+		//pEdgeNode->weight = (int)30 * rand() / (RAND_MAX + 1) +1;;  //权值
+		pEdgeNode->weight = 1;
+		pEdgeNode->next = G.adjList[m].pFirstEdge;
+		G.adjList[m].pFirstEdge = pEdgeNode;
+		pEdgeNode = new EdgeNode;
+		pEdgeNode->adjvex = m;
+		pEdgeNode->weight = 1;
+		pEdgeNode->next = G.adjList[n].pFirstEdge;
+		G.adjList[n].pFirstEdge = pEdgeNode;
+	}
+	return SUCCESS;
+}
+
+int CreateWeightedGraph(AdjListGraph& G,int v , int e)
+{
+
+	G.iVexNum = v;
+	G.iEdgeNum = e;
+	for (int i = 0; i < G.iVexNum; ++i)
+	{
+
+		G.adjList[i].data = i;
+
+		G.adjList[i].pFirstEdge = NULL;
+	}
+
+	int m;
+	int n;
+    srand((unsigned int)time(NULL));
+	for (int i = 0; i < G.iEdgeNum; ++i)
+	{
+		//VertexType first;
+		//VertexType second;
+
+		m = (int)(v * (rand() / (RAND_MAX + 1.0)));
+		n = (int)(v * (rand() / (RAND_MAX + 1.0)));
+
+    ////    cout<<m<<","<<n<<endl;
+		while (ExistEdge2(G, m, n) > 0  || m == n) {
+			//m = (int)100 * rand() / (RAND_MAX + 1);
+			//cout << "(" << m << "," << n << ")";
+			n = (int)(v * (rand() / (RAND_MAX + 1.0)));
+
+		}
+		EdgeNode* pEdgeNode = new EdgeNode;
+		pEdgeNode->adjvex = n;
+        int w=0;
+        while((w = (int)11 * (rand() / (RAND_MAX + 1.0)) -5) == 0);  //权值
+		pEdgeNode->weight = w;
+		//pEdgeNode->weight = 1;
+								//插入头部
+		pEdgeNode->next = G.adjList[m].pFirstEdge;
+		G.adjList[m].pFirstEdge = pEdgeNode;
+	}
+	return SUCCESS;
+}
 //销毁图
 void DestroyGraph(AdjListGraph& G)
 {
@@ -161,13 +255,41 @@ void DestroyGraph(AdjListGraph& G)
 	G.iVexNum = 0;
 	G.iEdgeNum = 0;
 }
+int printGraph(const AdjListGraph &G){
 
+	EdgeNode *en;
+	for (int i = 0; i < G.iVexNum; i++)
+	{
+        cout<<i<<" ";
+		en = G.adjList[i].pFirstEdge;
+		while (en)
+		{
+			cout <<" ("<<en->adjvex<<","<<en->weight<<")" ;
+			en = en->next;
+		}
+		cout << endl;
+	}
+    return 0;
+}
 int ExistEdge(const AdjListGraph& G,VertexType s,VertexType d) {
 	EdgeNode* en = G.adjList[s].pFirstEdge;
 	while (en)
 	{
 		if (en->adjvex == d)
 			return en->weight;
+		else
+		{
+			en = en->next;
+		}
+	}
+	return 0;
+}
+int ExistEdge2(const AdjListGraph& G,VertexType s,VertexType d) {
+	EdgeNode* en = G.adjList[s].pFirstEdge;
+	while (en)
+	{
+		if (en->adjvex == d)
+			return 1;
 		else
 		{
 			en = en->next;
@@ -875,13 +997,13 @@ int maxUnvisited(int _v,int _f[MAXVEX]){
     return _max;
 }
 void findCB(const AdjListGraph &G){
-
+   // t = 0;
     DFSCB(G);
     int finish[MAXVEX];
     for(int i = 0;i<MAXVEX;i++){
         finish[i] = f[i];
-        if(f[i] > 0)
-        cout<<f[i]<<endl;
+    //    if(f[i] > 0)
+       // cout<<f[i]<<endl;
     }
     AdjListGraph F;
     inverseGraph(G,F);
@@ -897,56 +1019,32 @@ void findCB(const AdjListGraph &G){
         max = maxUnvisited(F.iVexNum,finish);
     }
     //cb.push_back(-100);
-    cout<<"CB:";
-    cout<<cb.size()<<endl;
-    for(int i  = 0;i<cb.size();i++){
-        if(cb[i] == -1)
-            cout<<endl;
-        else
-            cout<<cb[i]<<"  ";
-    }
-    cout<<"CB:";
-    cout<<endl;
 }
 
 int min(int _a,int _b){
-    return _a>_b?_a:_b;
+    return _a>_b?_b:_a;
 }
 
 void findCutPoint(const AdjListGraph &_G,int _u) {
-    //记录dfs遍历次序
-    static int counter = 0;
-
-    //记录节点u的子树数
-    int children = 0;
-
     EdgeNode *p = _G.adjList[_u].pFirstEdge;
-    visited[_u] = 1;
+    visited[_u] = true;
 
-    //初始化d与low
     d[_u] = low[_u] = ++counter;
-
     for(; p != NULL; p = p->next) {
         int v = p->adjvex;
-
-        //节点v未被访问，则(u,v)为树边
         if(!visited[v]) {
-            children++;
             parent[v] = _u;
             findCutPoint(_G,v);
-            low[_u] = min(low[_u], low[v]);
-            //case (1)
-            if(parent[_u] == NIL && children > 1) {
-                printf("articulation point: %d\n", _u);
-            }
-            //case (2)
-            if(parent[_u] != NIL && low[v] >= d[_u]) {
-                printf("articulation point: %d\n", _u);
+            if(_u == origion){
+                re_num++;
+            }else{
+                low[_u] = min(low[_u], low[v]);
+                //low[v] = min(d[_u], d[v]);
+                if(low[v] >= d[_u])
+                    cut[_u] = true;
             }
         }
-
-        //节点v已访问，则(u,v)为回边
-        else if(v != parent[_u]) {
+        else {
             low[_u] = min(low[_u], d[v]);
         }
     }
@@ -956,22 +1054,253 @@ void FCP(const AdjListGraph &_G){
     for(int i = 0;i<_G.iVexNum;i++){
         visited[i] = false;
         parent[i] = NIL;
+        cut[i] = false;
     }
-    findCutPoint(_G,0);
-};
+    for(int i=0;i<_G.iVexNum;i++){
+        if(!visited[i]){
+            origion = i;
+            findCutPoint(_G,i);
+            if(re_num > 1)
+                //cout<<"割点:"<<i<<" ";
+                cut[i] = true;
+        }
+    }
+    for(int i = 0;i<_G.iVexNum;i++){
+        if(cut[i])
+            cout<<"割点:"<<i<<" ";
+    }
+}
+
+typedef struct AdjMatricx{
+    AdjMatricx(int v,int e):_v(v),_e(e){
+        adjMatricx = new int*[v];
+        for(int i = 0;i<v;i++){
+            adjMatricx[i] = new int[v];
+        }
+        int m,n;
+        srand((unsigned int)time(NULL));
+        for(int i=0;i<e;i++){
+            srand((unsigned int)time(NULL));
+            m = (int)(v * (rand() / (RAND_MAX + 1.0)));
+            n = (int)(v * (rand() / (RAND_MAX + 1.0)));
+            while (adjMatricx[m][n] > 0  || m == n) {
+                m = (int)(v * (rand() / (RAND_MAX + 1.0)));
+                n = (int)(v * (rand() / (RAND_MAX + 1.0)));
+            }
+            adjMatricx[m][n] = (int)(20 * (rand() / (RAND_MAX + 1.0))) + 1;
+            adjMatricx[n][m] = adjMatricx[m][n];
+        }
+        //int n=0;
+        for(int i=0;i<v;i++){
+            for(int j=0;j<v;j++){
+                if(adjMatricx[i][j] == 0)
+                    adjMatricx[i][j] = INFINITY;
+            }
+
+        }
+    };
+    int _v;
+    int _e;
+    int **adjMatricx;
+}AdjMatricx;
+
+void prim(const AdjMatricx &g, int v0, float &sum) {
+    float lowcost[100],w[100];
+    int vset[100];
+    vector<pair<int,int>> edg;
+    int i, j, k,v,x;
+    float min;
+    v = v0;
+    for (i = 0; i < g._v; ++i) {
+        lowcost[i] = g.adjMatricx[v0][i];
+        vset[i] = 0;
+        w[i] = v0;
+    }
+    vset[v0] = 1;
+    sum = 0;
+    for (i = 0; i < g._v - 1; ++i)
+    {
+        min = INFINITY;
+        for(j=0;j<g._v;++j)
+            if (vset[j] == 0 && lowcost[j] < min)
+            {
+                min = lowcost[j];
+                k = j;
+                x = w[j];
+            }
+        vset[k] = 1;
+        edg.push_back(make_pair(x,k));
+        v = k;
+        sum = sum + min;
+
+        for (j = 0; j < g._v; ++j)
+            if (vset[j] == 0 && g.adjMatricx[v][j] < lowcost[j] && vset[j] !=1)
+            {
+                lowcost[j] = g.adjMatricx[v][j];
+                w[j] = v;
+            }
+    }
+    for(int i=0;i<edg.size();i++){
+        cout<<"("<<edg[i].first<<","<<edg[i].second<<")";
+    }
+}
+void dfsMatricx(const AdjMatricx &G,int u){
+    visited[u] = true;
+    for(int i=0;i<G._v;i++){
+        if(i!=u && G.adjMatricx[u][i] < INFINITY){
+            if(!visited[i]){
+                dfsMatricx(G,i);
+                parent[i] = u;
+            }else if(parent[u]!=i){
+                edges.push_back(make_pair(u,i));
+            }
+        }
+    }
+}
+void localSearch(){
+    struct AdjMatricx gm(5,6);
+    float sum;
+    prim(gm,0,sum);
+    cout<<"sum:"<<sum<<endl;
+    //int n=0;
+    for(int i=0;i<gm._v;i++){
+        for(int j=0;j<gm._v;j++){
+//            if(gm.adjMatricx[i][j] < INFINITY)
+                cout<<gm.adjMatricx[i][j]<< " ";
+        }
+        cout<<endl;
+    }
+    cout<<endl;
+    for(int i = 0;i<gm._v;i++){
+        parent[i] =-1;
+        visited[i] =false;
+    }
+    pair<int,int> wp;
+    dfsMatricx(gm,0);
+    for(int i = 0;i<edges.size();i++){
+        wp = edges[i];
+        int v=edges[i].first;
+        while(edges[i].second!=v && parent[v] >= 0){
+            wp = gm.adjMatricx[wp.first][wp.second] < gm.adjMatricx[parent[v]][v]?make_pair(parent[v],v):wp;
+            v=parent[v];
+        }
+        if(v == edges[i].second && wp!=edges[i]){
+            int m = edges[i].first;
+            int n = edges[i].second;
+            while(m!=wp.second){
+                int l =parent[m];
+                parent[m] = n;
+                n=m;
+                m=l;
+            }
+            parent[m] = n;
+
+        }
+    }
+    int sum2 = 0,n=0;
+    for(int i=0;i<gm._v;i++){
+        if(parent[i]>= 0 ){
+            sum2+=gm.adjMatricx[parent[i]][i];
+            cout<<"("<<parent[i]<<","<<i<<") ";
+            n++;
+        }
+    }
+    cout<<"sum2:"<<sum2<<" "<<n<<endl;
+}
+
+
+
+int Bellman_Ford(const AdjListGraph &G,VertexType s){
+    for(int i=0;i<G.iVexNum;i++){
+        d[i] = INFINITY;
+        parent[i] = -1;
+    }
+    d[s] = 0;
+
+    for(int i = 1;i<G.iVexNum;i++){
+        for(int i = 0;i<G.iVexNum;i++){
+            EdgeNode *e = G.adjList[i].pFirstEdge;
+            while(e){
+                if(d[e->adjvex] > d[i] + e->weight && d[i] < INFINITY){
+                    d[e->adjvex] = d[i] + e->weight;
+                    parent[e->adjvex] = i;
+                }
+                e = e->next;
+            }
+        }
+
+    }
+    for(int i = 0;i<G.iVexNum;i++){
+        EdgeNode *e = G.adjList[i].pFirstEdge;
+        while(e){
+            if(d[e->adjvex] > d[i] + e->weight)
+                return e->adjvex;
+            e = e->next;
+        }
+    }
+    return -1;
+
+}
+
+int indexOf(vector<int> &c,int v){
+    for(int i = 0;i < c.size();i++){
+        if(v == c[i])
+            return i;
+    }
+    return -1;
+}
+
+void containNegativeCircle(){
+    vector<int> s;
+    int v ;
+    AdjListGraph G;
+    CreateWeightedGraph(G,100,500);
+    while(v = Bellman_Ford(G,3) < 0){
+        DestroyGraph(G);
+        CreateWeightedGraph(G,10,15);
+    }
+    printGraph(G);
+    cout<<v<<endl;
+    s.push_back(v);
+    int n=parent[v];
+    while(indexOf(s,n) < 0 && n!= -1){
+        s.push_back(n);
+        n=parent[n];
+    }
+    s.push_back(n);
+    int i = s.size();
+    cout<<s[--i]<<" ";
+    while(s[s.size()-1] != s[--i]){
+        cout<<s[i]<<" ";
+    }
+    cout<<s[i]<<endl;
+}
 
 int main()
 {
 	//创建有向图
-	AdjListGraph G,F;
-	CreateAdjListGraph(G,10,20);
+//	AdjListGraph G,F,UG;
+//	CreateAdjListGraph(F,100,3000);
+//	CreateAdjListGraph(G,100,300);
+  //  CreateUndirectedAdjListGraph(UG,100,300);
 	//inverseGraph(G,F);
 	//深度优先遍历图
 //	DFS(G,10);
-    findCB(G);
+/*    findCB(G);
+
+    cout<<"连通分支："<<endl;
+    //cout<<cb.size()<<endl;
+    for(int i  = 0;i<cb.size();i++){
+        if(cb[i] == -1)
+            cout<<endl;
+        else
+            cout<<cb[i]<<"  ";
+    }
+    //cout<<"CB:";
+    FCP(UG);
 
 	cout << endl << endl;
-
+*/
 	//广度优先遍历图
 	//BFS(G,10);
 
@@ -981,11 +1310,11 @@ int main()
 //	cout << endl << endl;
 	//DFSTraverse(F, 10);
 //	cout << endl << endl;
-	EdgeNode *en;
-	for (int i = 0; i < G.iVexNum; i++)
+/*	EdgeNode *en;
+	for (int i = 0; i < UG.iVexNum; i++)
 	{
         cout<<i<<" ";
-		en = G.adjList[i].pFirstEdge;
+		en = UG.adjList[i].pFirstEdge;
 		while (en)
 		{
 			cout <<" "<<en->adjvex ;
@@ -994,7 +1323,7 @@ int main()
 		cout << endl;
 	}
 		cout << endl;
-	/*for (int i = 0; i <F.iVexNum; i++)
+*/	/*for (int i = 0; i <F.iVexNum; i++)
 	{
         cout<<i<<" ";
         if(F.adjList[i].pFirstEdge == NULL)
@@ -1027,12 +1356,12 @@ int main()
 		cout << d << "  ";
 	}
 	cout << dc << endl;*/
-	cout << endl << endl;
-	DAG2(G);
+//	cout << endl << endl;
+//	DAG2(F);
 	//DAG(G);
-	cout << endl << endl;
+//	cout << endl << endl;
 
-	d = 0; dc = 0;
+/*	d = 0; dc = 0;
 	for (int i = 0; i < 100; i++)
 	{
 		d = GetVertexDegree(G, i);
@@ -1041,26 +1370,27 @@ int main()
 	}
 	cout << dc << endl;
 	cout << endl << endl;
-
-	cout <<"最长路径为："<< LSTPath(G);
-
-	cout << endl << endl;
-
-	cout << "最长路径为：" <<longestPathToPo(G);
+*/
+//	cout <<"最长路径为："<< LSTPath(F);
 
 	cout << endl << endl;
+
+//	cout << "最长路径为：" <<longestPathToPo(G);
+//    localSearch();
+//    return 0;
+//	cout << endl << endl;
 	//DFSTraverse(G, 10);
 	//结点的度
 //	cout << "输入求度的结点:";
 	//VertexType v;
-
+    containNegativeCircle();
 
 //	VertexType v;
 //	cin >> v;
 //	cout << "度为：" << GetVertexDegree(G, v) << endl;
 
 	//销毁有向图
-	DestroyGraph(G);
+//	DestroyGraph(G);
 //	DestroyGraph(F);
 	return 0;
 }
